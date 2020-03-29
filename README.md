@@ -1,5 +1,5 @@
 # MICROSCOPE-2.0
-Use Marlin firmware to control steppers for microscope
+Use Marlin firmware to control steppers for microscope. Based on BIGTREETECH-SKR-V1.3 and Marlin2ForPipetBot (https://it-by-derandere.blogspot.com/p/pipetbot-a8.html). 
 
 
 # BIGTREETECH-SKR-V1.3
