@@ -1741,10 +1741,12 @@ uint32_t Stepper::stepper_block_phase_isr() {
       if (X_MOVE_TEST) SBI(axis_bits, A_AXIS);
       if (Y_MOVE_TEST) SBI(axis_bits, B_AXIS);
       if (Z_MOVE_TEST) SBI(axis_bits, C_AXIS);
-      //if (!!current_block->steps.e) SBI(axis_bits, E_AXIS);
-      //if (!!current_block->steps.a) SBI(axis_bits, X_HEAD);
-      //if (!!current_block->steps.b) SBI(axis_bits, Y_HEAD);
-      //if (!!current_block->steps.c) SBI(axis_bits, Z_HEAD);
+      #if ENABLED(E_AXIS_HOMING)
+        if (!!current_block->steps[E_AXIS]) SBI(axis_bits, E_AXIS);
+      #endif
+      //if (!!current_block->steps[A_AXIS]) SBI(axis_bits, X_HEAD);
+      //if (!!current_block->steps[B_AXIS]) SBI(axis_bits, Y_HEAD);
+      //if (!!current_block->steps[C_AXIS]) SBI(axis_bits, Z_HEAD);
       axis_did_move = axis_bits;
 
       // No acceleration / deceleration time elapsed so far
@@ -2277,7 +2279,7 @@ void Stepper::report_positions() {
     if (was_enabled) DISABLE_STEPPER_DRIVER_INTERRUPT();
   #endif
 
-  const xyz_long_t pos = count_position;
+  const xyze_long_t pos = count_position;
 
   #ifdef __AVR__
     if (was_enabled) ENABLE_STEPPER_DRIVER_INTERRUPT();
@@ -2293,6 +2295,12 @@ void Stepper::report_positions() {
   #else
     SERIAL_ECHOLNPAIR(" Z:", pos.z);
   #endif
+
+  #if ENABLED(E_AXIS_HOMING)
+    SERIAL_ECHOPAIR(" E:", pos.e);
+  #endif
+
+  SERIAL_EOL();
 }
 
 #if ENABLED(BABYSTEPPING)
