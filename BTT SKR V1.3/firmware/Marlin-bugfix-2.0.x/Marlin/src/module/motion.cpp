@@ -1057,6 +1057,9 @@ uint8_t axes_need_homing(uint8_t axis_bits/*=0x07*/) {
   if (TEST(axis_bits, X_AXIS) && TEST(HOMED_FLAGS, X_AXIS)) CBI(axis_bits, X_AXIS);
   if (TEST(axis_bits, Y_AXIS) && TEST(HOMED_FLAGS, Y_AXIS)) CBI(axis_bits, Y_AXIS);
   if (TEST(axis_bits, Z_AXIS) && TEST(HOMED_FLAGS, Z_AXIS)) CBI(axis_bits, Z_AXIS);
+  #if ENABLED(E_AXIS_HOMING)
+    if (TEST(axis_bits, E_AXIS) && TEST(HOMED_FLAGS, E_AXIS)) CBI(axis_bits, E_AXIS);
+  #endif
   return axis_bits;
 }
 
@@ -1068,6 +1071,9 @@ bool axis_unhomed_error(uint8_t axis_bits/*=0x07*/) {
       TEST(axis_bits, X_AXIS) ? "X" : "",
       TEST(axis_bits, Y_AXIS) ? "Y" : "",
       TEST(axis_bits, Z_AXIS) ? "Z" : ""
+      #if ENABLED(E_AXIS_HOMING)
+        , TEST(axis_bits, E_AXIS) ? "E" : ""
+      #endif
     );
     SERIAL_ECHO_START();
     SERIAL_ECHOLN(msg);

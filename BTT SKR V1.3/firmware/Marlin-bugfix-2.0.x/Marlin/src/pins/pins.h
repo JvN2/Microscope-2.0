@@ -912,6 +912,21 @@
   #define Z_STOP_PIN Z_MAX_PIN
 #endif
 
+#if ENABLED(E_AXIS_HOMING)
+  #ifdef E_HOME_DIR
+    #if E_HOME_DIR < 0
+      #define E_MIN_PIN E_STOP_PIN
+      #define E_MAX_PIN -1
+    #else
+      #define E_MIN_PIN -1
+      #define E_MAX_PIN E_STOP_PIN
+    #endif
+  #endif
+#else
+  #undef E_MIN_PIN
+  #undef E_MAX_PIN
+#endif
+
 //
 // Disable unused endstop / probe pins
 //

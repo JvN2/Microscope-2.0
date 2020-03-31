@@ -53,6 +53,10 @@
 #define Y_MAX_LENGTH (Y_MAX_POS - (Y_MIN_POS))
 #define Z_MAX_LENGTH (Z_MAX_POS - (Z_MIN_POS))
 
+#if ENABLED(E_AXIS_HOMING)
+  #define E_MAX_LENGTH (E_MAX_POS - (E_MIN_POS))
+#endif
+
 // Defined only if the sanity-check is bypassed
 #ifndef X_BED_SIZE
   #define X_BED_SIZE X_MAX_LENGTH
@@ -179,6 +183,14 @@
   #define Z_HOME_POS MANUAL_Z_HOME_POS
 #else
   #define Z_HOME_POS (Z_HOME_DIR < 0 ? Z_MIN_POS : Z_MAX_POS)
+#endif
+
+#if ENABLED(E_AXIS_HOMING)
+  #ifdef MANUAL_E_HOME_POS
+    #define E_HOME_POS MANUAL_E_HOME_POS
+  #else
+    #define E_HOME_POS (E_HOME_DIR < 0 ? E_MIN_POS : E_MAX_POS)
+  #endif
 #endif
 
 /**
@@ -867,6 +879,9 @@
   #if ENABLED(USE_ZMIN_PLUG)
     #define ENDSTOPPULLUP_ZMIN
   #endif
+  #if ENABLED(USE_EMIN_PLUG)
+    #define ENDSTOPPULLUP_EMIN
+  #endif
 #endif
 
 /**
@@ -1010,6 +1025,8 @@
 #define HAS_Y_MAX _HAS_STOP(Y,MAX)
 #define HAS_Z_MIN _HAS_STOP(Z,MIN)
 #define HAS_Z_MAX _HAS_STOP(Z,MAX)
+#define HAS_E_MIN _HAS_STOP(E,MIN)
+#define HAS_E_MAX _HAS_STOP(E,MAX)
 #define HAS_X2_MIN (PIN_EXISTS(X2_MIN))
 #define HAS_X2_MAX (PIN_EXISTS(X2_MAX))
 #define HAS_Y2_MIN (PIN_EXISTS(Y2_MIN))

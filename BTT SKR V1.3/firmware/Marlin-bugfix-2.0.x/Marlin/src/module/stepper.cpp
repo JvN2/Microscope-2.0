@@ -2293,12 +2293,14 @@ void Stepper::report_positions() {
   #if CORE_IS_XZ || CORE_IS_YZ || ENABLED(DELTA)
     SERIAL_ECHOLNPAIR(" C:", pos.z);
   #else
-    SERIAL_ECHOLNPAIR(" Z:", pos.z);
+    #if ENABLED(E_AXIS_HOMING)
+      SERIAL_ECHOPAIR(" Z:", pos.z," E:", pos.e);
+    #else
+      SERIAL_ECHOLNPAIR(" Z:", pos.z);
+    #endif
   #endif
 
-  #if ENABLED(E_AXIS_HOMING)
-    SERIAL_ECHOPAIR(" E:", pos.e);
-  #endif
+
 
   SERIAL_EOL();
 }

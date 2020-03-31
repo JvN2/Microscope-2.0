@@ -322,9 +322,20 @@ void GcodeSuite::G28(const bool always_home_all) {
 
   #else // NOT DELTA
 
-    const bool homeX = parser.seen('X'), homeY = parser.seen('Y'), homeZ = parser.seen('Z'),
-               home_all = always_home_all || (homeX == homeY && homeX == homeZ),
-               doX = home_all || homeX, doY = home_all || homeY, doZ = home_all || homeZ;
+  const bool homeX = parser.seen('X'), homeY = parser.seen('Y'), homeZ = parser.seen('Z'), homeE =
+               #if ENABLED(E_AXIS_HOMING)
+                 parser.seen('E')
+               #else
+                 homeX
+               #endif
+             , home_all = always_home_all || (homeX == homeY && homeX == homeZ && homeX == homeE)
+             , doX = home_all || homeX, doY = home_all || homeY, doZ = home_all || homeZ, doE =
+               #if ENABLED(E_AXIS_HOMING)
+                 home_all || homeE
+               #else
+                 home_all
+               #endif
+             ;
 
     destination = current_position;
 
@@ -334,21 +345,23 @@ void GcodeSuite::G28(const bool always_home_all) {
 
     #endif
 
-    const float z_homing_height = (
-      #if ENABLED(UNKNOWN_Z_NO_RAISE)
-        !TEST(axis_known_position, Z_AXIS) ? 0 :
-      #endif
-          (parser.seenval('R') ? parser.value_linear_units() : Z_HOMING_HEIGHT)
-    );
+    #if !ENABLED(MICROSCOPE_MODE)
+      const float z_homing_height = (
+        #if ENABLED(UNKNOWN_Z_NO_RAISE)
+          !TEST(axis_known_position, Z_AXIS) ? 0 :
+        #endif
+            (parser.seenval('R') ? parser.value_linear_units() : Z_HOMING_HEIGHT)
+      );
 
-    if (z_homing_height && (doX || doY)) {
-      // Raise Z before homing any other axes and z is not already high enough (never lower z)
-      destination.z = z_homing_height + (TEST(axis_known_position, Z_AXIS) ? 0.0f : current_position.z);
-      if (destination.z > current_position.z) {
-        if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Raise Z (before homing) to ", destination.z);
-        do_blocking_move_to_z(destination.z);
+      if (z_homing_height && (doX || doY)) {
+        // Raise Z before homing any other axes and z is not already high enough (never lower z)
+        destination.z = z_homing_height + (TEST(axis_known_position, Z_AXIS) ? 0.0f : current_position.z);
+        if (destination.z > current_position.z) {
+          if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR("Raise Z (before homing) to ", destination.z);
+          do_blocking_move_to_z(destination.z);
+        }
       }
-    }
+    #endif
 
     #if ENABLED(QUICK_HOME)
 
@@ -426,6 +439,25 @@ void GcodeSuite::G28(const bool always_home_all) {
 
       } // doZ
     #endif // Z_HOME_DIR < 0
+
+    #if ENABLED(E_AXIS_HOMING)
+      // Home E
+      if (home_all || doE) {
+
+        #if ENABLED(DUAL_X_CARRIAGE)
+
+          // Always home the 2nd (right) extruder first
+          active_extruder = 1;
+          homeaxis(E_AXIS);
+
+          // Home the 1st (left) extruder
+          active_extruder = 0;
+
+        #endif
+
+        homeaxis(E_AXIS);
+      }
+    #endif
 
     sync_plan_position();
 

@@ -53,7 +53,7 @@ Endstops endstops;
 // private:
 
 bool Endstops::enabled, Endstops::enabled_globally; // Initialized by settings.load()
-volatile uint8_t Endstops::hit_state;
+volatile Endstops::hitstate_t Endstops::hit_state;
 
 Endstops::esbits_t Endstops::live_state = 0;
 
@@ -339,7 +339,7 @@ void Endstops::resync() {
 #endif
 
 void Endstops::event_handler() {
-  static uint8_t prev_hit_state; // = 0
+  static hitstate_t prev_hit_state; // = 0
   if (hit_state == prev_hit_state) return;
   prev_hit_state = hit_state;
   if (hit_state) {
@@ -361,12 +361,18 @@ void Endstops::event_handler() {
     #define ENDSTOP_HIT_TEST_X() _ENDSTOP_HIT_TEST(X,'X')
     #define ENDSTOP_HIT_TEST_Y() _ENDSTOP_HIT_TEST(Y,'Y')
     #define ENDSTOP_HIT_TEST_Z() _ENDSTOP_HIT_TEST(Z,'Z')
+    #if ENABLED(E_AXIS_HOMING)
+      #define ENDSTOP_HIT_TEST_E() _ENDSTOP_HIT_TEST(E,'E')
+    #endif
 
     SERIAL_ECHO_START();
     SERIAL_ECHOPGM(MSG_ENDSTOPS_HIT);
     ENDSTOP_HIT_TEST_X();
     ENDSTOP_HIT_TEST_Y();
     ENDSTOP_HIT_TEST_Z();
+    #if ENABLED(E_AXIS_HOMING)
+      ENDSTOP_HIT_TEST_Z();
+    #endif
 
     #if HAS_CUSTOM_PROBE_PIN
       #define P_AXIS Z_AXIS
@@ -425,6 +431,12 @@ void _O2 Endstops::report_states() {
   #endif
   #if HAS_Y2_MAX
     ES_REPORT(Y2_MAX);
+  #endif
+  #if HAS_E_MIN
+    ES_REPORT(E_MIN);
+  #endif
+  #if HAS_E_MAX
+    ES_REPORT(E_MAX);
   #endif
   #if HAS_Z_MIN
     ES_REPORT(Z_MIN);
@@ -535,6 +547,14 @@ void Endstops::update() {
     #define Z_AXIS_HEAD Z_AXIS
   #endif
 
+  #if ENABLED(E_AXIS_HOMING)
+    #if CORE_IS_XY || CORE_IS_XZ
+      #define E_AXIS_HEAD E_HEAD
+    #else
+      #define E_AXIS_HEAD E_AXIS
+    #endif
+  #endif
+
   /**
    * Check and update endstops
    */
@@ -625,6 +645,14 @@ void Endstops::update() {
       // If this pin isn't the bed probe it's the Z endstop
       UPDATE_ENDSTOP_BIT(Z, MAX);
     #endif
+  #endif
+
+  #if HAS_E_MIN
+    UPDATE_ENDSTOP_BIT(E, MIN);
+  #endif
+
+  #if HAS_E_MAX
+    UPDATE_ENDSTOP_BIT(E, MAX);
   #endif
 
   #if ENDSTOP_NOISE_THRESHOLD
@@ -781,6 +809,22 @@ void Endstops::update() {
       #endif
     }
   }
+  #if ENABLED(E_AXIS_HOMING)
+    if (stepper.axis_is_moving(E_AXIS)) {
+      if (stepper.motor_direction(E_AXIS_HEAD)) { // -direction
+        #if HAS_E_MIN
+          PROCESS_ENDSTOP(E, MIN);
+        #endif
+      }
+      else { // +direction
+        #if HAS_E_MAX
+          PROCESS_ENDSTOP(E, MAX);
+        #endif
+      }
+    }
+  #endif
+
+
 } // Endstops::update()
 
 #if ENABLED(SPI_ENDSTOPS)
@@ -892,6 +936,14 @@ void Endstops::update() {
     #if HAS_Z3_MAX
       ES_GET_STATE(Z3_MAX);
     #endif
+    #if ENABLED(E_AXIS_HOMING)
+      #if HAS_E_MAX
+        ES_GET_STATE(E_MAX);
+      #endif
+      #if HAS_E_MIN
+        ES_GET_STATE(E_MIN);
+      #endif
+    #endif
 
     uint16_t endstop_change = live_state_local ^ old_live_state_local;
     #define ES_REPORT_CHANGE(S) if (TEST(endstop_change, S)) SERIAL_ECHOPAIR("  " STRINGIFY(S) ":", TEST(live_state_local, S))
@@ -941,6 +993,14 @@ void Endstops::update() {
       #endif
       #if HAS_Z3_MAX
         ES_REPORT_CHANGE(Z3_MAX);
+      #endif
+      #if ENABLED(E_AXIS_HOMING)
+        #if HAS_E_MIN
+          ES_REPORT_CHANGE(E_MIN);
+        #endif
+        #if HAS_E_MAX
+          ES_REPORT_CHANGE(E_MAX);
+        #endif
       #endif
       SERIAL_ECHOLNPGM("\n");
       analogWrite(pin_t(LED_PIN), local_LED_status);

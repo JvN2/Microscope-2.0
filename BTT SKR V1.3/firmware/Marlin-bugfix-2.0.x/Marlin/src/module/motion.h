@@ -40,7 +40,12 @@
 
 // Axis homed and known-position states
 extern uint8_t axis_homed, axis_known_position;
-constexpr uint8_t xyz_bits = _BV(X_AXIS) | _BV(Y_AXIS) | _BV(Z_AXIS);
+constexpr uint8_t xyz_bits = (_BV(X_AXIS) | _BV(Y_AXIS) | _BV(Z_AXIS)
+  #if ENABLED(E_AXIS_HOMING)
+    | _BV(E_AXIS)
+  #endif
+);
+
 FORCE_INLINE bool all_axes_homed() { return (axis_homed & xyz_bits) == xyz_bits; }
 FORCE_INLINE bool all_axes_known() { return (axis_known_position & xyz_bits) == xyz_bits; }
 FORCE_INLINE void set_all_unhomed() { axis_homed = 0; }
@@ -140,7 +145,12 @@ XYZ_DEFS(signed char, home_dir, HOME_DIR);
   constexpr xyz_pos_t hotend_offset[1] = { { 0 } };
 #endif
 
-typedef struct { xyz_pos_t min, max; } axis_limits_t;
+#if ENABLED(E_AXIS_HOMING)
+  typedef struct { xyze_pos_t min, max; } axis_limits_t;
+#else
+  typedef struct { xyz_pos_t min, max; } axis_limits_t;
+#endif
+
 #if HAS_SOFTWARE_ENDSTOPS
   extern bool soft_endstops_enabled;
   extern axis_limits_t soft_endstop;
@@ -228,8 +238,14 @@ void restore_feedrate_and_scaling();
 // Homing
 //
 
-uint8_t axes_need_homing(uint8_t axis_bits=0x07);
-bool axis_unhomed_error(uint8_t axis_bits=0x07);
+
+#if ENABLED(E_AXIS_HOMING)
+  uint8_t axes_need_homing(uint8_t axis_bits=0x0F);
+  bool axis_unhomed_error(uint8_t axis_bits=0x0F);
+#else
+  uint8_t axes_need_homing(uint8_t axis_bits=0x07);
+  bool axis_unhomed_error(uint8_t axis_bits=0x07);
+#endif
 
 #if ENABLED(NO_MOTION_BEFORE_HOMING)
   #define MOTION_CONDITIONS (IsRunning() && !axis_unhomed_error())
@@ -285,6 +301,11 @@ void homeaxis(const AxisEnum axis);
 #define RAW_X_POSITION(POS)     LOGICAL_TO_NATIVE(POS, X_AXIS)
 #define RAW_Y_POSITION(POS)     LOGICAL_TO_NATIVE(POS, Y_AXIS)
 #define RAW_Z_POSITION(POS)     LOGICAL_TO_NATIVE(POS, Z_AXIS)
+
+#if ENABLED(E_AXIS_HOMING)
+  #define LOGICAL_E_POSITION(POS) NATIVE_TO_LOGICAL(POS, E_AXIS)
+  #define RAW_E_POSITION(POS)     LOGICAL_TO_NATIVE(POS, E_AXIS)
+#endif
 
 /**
  * position_is_reachable family of functions

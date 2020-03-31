@@ -191,6 +191,10 @@
 #define MSG_Y2_MAX                          "y2_max"
 #define MSG_Z_MIN                           "z_min"
 #define MSG_Z_MAX                           "z_max"
+#if ENABLED(E_AXIS_HOMING)
+  #define MSG_E_MIN                           "e_min"
+  #define MSG_E_MAX                           "e_max"
+#endif
 #define MSG_Z2_MIN                          "z2_min"
 #define MSG_Z2_MAX                          "z2_max"
 #define MSG_Z3_MIN                          "z3_min"

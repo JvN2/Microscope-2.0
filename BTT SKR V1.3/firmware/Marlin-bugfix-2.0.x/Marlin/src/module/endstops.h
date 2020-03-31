@@ -30,7 +30,13 @@
 
 enum EndstopEnum : char {
   X_MIN,  Y_MIN,  Z_MIN,  Z_MIN_PROBE,
+  #if ENABLED(E_AXIS_HOMING)
+    E_MIN,
+  #endif
   X_MAX,  Y_MAX,  Z_MAX,
+  #if ENABLED(E_AXIS_HOMING)
+    E_MAX,
+  #endif
   X2_MIN, X2_MAX,
   Y2_MIN, Y2_MAX,
   Z2_MIN, Z2_MAX,
@@ -39,7 +45,7 @@ enum EndstopEnum : char {
 
 class Endstops {
   public:
-    #if HAS_EXTRA_ENDSTOPS
+    #if ENABLED(E_AXIS_HOMING) || HAS_EXTRA_ENDSTOPS
       typedef uint16_t esbits_t;
       #if ENABLED(X_DUAL_ENDSTOPS)
         static float x2_endstop_adj;
@@ -57,10 +63,16 @@ class Endstops {
       typedef uint8_t esbits_t;
     #endif
 
+    #if ENABLED(E_AXIS_HOMING)
+      typedef uint16_t hitstate_t;
+    #else
+      typedef uint8_t hitstate_t;
+    #endif
+
   private:
     static bool enabled, enabled_globally;
     static esbits_t live_state;
-    static volatile uint8_t hit_state;      // Use X_MIN, Y_MIN, Z_MIN and Z_MIN_PROBE as BIT index
+    static volatile hitstate_t hit_state;      // Use X_MIN, Y_MIN, Z_MIN and Z_MIN_PROBE as BIT index
 
     #if ENDSTOP_NOISE_THRESHOLD
       static esbits_t validated_live_state;

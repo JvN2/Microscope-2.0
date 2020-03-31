@@ -585,6 +585,10 @@
 
 // @section machine
 
+// MICROSCOPE_MODE (status: Experimental), John van Noort
+// Add code to use E axes as seperate linear axes, including homing and offset control
+#define MICROSCOPE_MODE
+
 // Uncomment one of these options to enable CoreXY, CoreXZ, or CoreYZ kinematics
 // either in the usual order or reversed
 //#define COREXY
@@ -608,11 +612,6 @@
  * Only use if the E-axis has been repurposed (i.e., a 4-axis robot).
  */
 #define E_AXIS_HOMING
-
-// MICROSCOPE_MODE (status: Experimental), John van Noort
-// Add code to use E axes as seperate linear axes, including homing and offset control
-#define MICROSCOPE_MODE
-
 
 // Specify here all the endstop connectors that are connected to any endstop or probe.
 // Almost all printers will be using one per axis. Probes will use one or more of the
@@ -1033,15 +1032,15 @@
 // @section machine
 
 // Invert the stepper direction. Change (or reverse the motor connector) if an axis goes the wrong way.
-#define INVERT_X_DIR false
-#define INVERT_Y_DIR false
-#define INVERT_Z_DIR false
+#define INVERT_X_DIR true
+#define INVERT_Y_DIR true
+#define INVERT_Z_DIR true
 
 // @section extruder
 
 // For direct drive extruder v9 set to true, for geared extruder set to false.
 #define INVERT_E0_DIR true
-#define INVERT_E1_DIR false
+#define INVERT_E1_DIR true
 #define INVERT_E2_DIR false
 #define INVERT_E3_DIR false
 #define INVERT_E4_DIR false
@@ -1062,7 +1061,7 @@
 #define Y_HOME_DIR -1
 #define Z_HOME_DIR -1
 #if ENABLED(E_AXIS_HOMING)
-  #define E_HOME_DIR 1
+  #define E_HOME_DIR -1
 #endif
 
 // @section machine
