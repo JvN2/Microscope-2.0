@@ -322,18 +322,16 @@ void GcodeSuite::G28(const bool always_home_all) {
 
   #else // NOT DELTA
 
-  const bool homeX = parser.seen('X'), homeY = parser.seen('Y'), homeZ = parser.seen('Z'), homeE =
+  const bool homeX = parser.seen('X'), homeY = parser.seen('Y'), homeZ = parser.seen('Z')
                #if ENABLED(E_AXIS_HOMING)
-                 parser.seen('E')
-               #else
-                 homeX
+                 , homeE = parser.seen('E')
                #endif
              , home_all = always_home_all || (homeX == homeY && homeX == homeZ && homeX == homeE)
              , doX = home_all || homeX, doY = home_all || homeY, doZ = home_all || homeZ, doE =
                #if ENABLED(E_AXIS_HOMING)
                  home_all || homeE
                #else
-                 home_all
+                 0
                #endif
              ;
 
@@ -443,18 +441,6 @@ void GcodeSuite::G28(const bool always_home_all) {
     #if ENABLED(E_AXIS_HOMING)
       // Home E
       if (home_all || doE) {
-
-        #if ENABLED(DUAL_X_CARRIAGE)
-
-          // Always home the 2nd (right) extruder first
-          active_extruder = 1;
-          homeaxis(E_AXIS);
-
-          // Home the 1st (left) extruder
-          active_extruder = 0;
-
-        #endif
-
         homeaxis(E_AXIS);
       }
     #endif
