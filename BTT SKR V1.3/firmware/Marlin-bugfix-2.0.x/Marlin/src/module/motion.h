@@ -119,9 +119,15 @@ extern int16_t feedrate_percentage;
 FORCE_INLINE float pgm_read_any(const float *p) { return pgm_read_float(p); }
 FORCE_INLINE signed char pgm_read_any(const signed char *p) { return pgm_read_byte(p); }
 
-#define XYZ_DEFS(T, NAME, OPT) \
-  extern const XYZval<T> NAME##_P; \
-  FORCE_INLINE T NAME(AxisEnum axis) { return pgm_read_any(&NAME##_P[axis]); }
+#if ENABLED(E_AXIS_HOMING)
+  #define XYZ_DEFS(T, NAME, OPT) \
+    extern const XYZEval<T> NAME##_P; \
+    FORCE_INLINE T NAME(AxisEnum axis) { return pgm_read_any(&NAME##_P[axis]); }
+#else
+  #define XYZ_DEFS(T, NAME, OPT) \
+    extern const XYZval<T> NAME##_P; \
+    FORCE_INLINE T NAME(AxisEnum axis) { return pgm_read_any(&NAME##_P[axis]); }
+#endif
 
 XYZ_DEFS(float, base_min_pos,   MIN_POS);
 XYZ_DEFS(float, base_max_pos,   MAX_POS);
@@ -154,7 +160,7 @@ XYZ_DEFS(signed char, home_dir, HOME_DIR);
 #if HAS_SOFTWARE_ENDSTOPS
   extern bool soft_endstops_enabled;
   extern axis_limits_t soft_endstop;
-  void apply_motion_limits(xyz_pos_t &target);
+  void apply_motion_limits(xyze_pos_t &target);
   void update_software_endstops(const AxisEnum axis
     #if HAS_HOTEND_OFFSET
       , const uint8_t old_tool_index=0, const uint8_t new_tool_index=0
@@ -264,13 +270,13 @@ void homeaxis(const AxisEnum axis);
  */
 #if HAS_HOME_OFFSET || HAS_POSITION_SHIFT
   #if HAS_HOME_OFFSET
-    extern xyz_pos_t home_offset;
+    extern xyze_pos_t home_offset;
   #endif
   #if HAS_POSITION_SHIFT
-    extern xyz_pos_t position_shift;
+    extern xyze_pos_t position_shift;
   #endif
   #if HAS_HOME_OFFSET && HAS_POSITION_SHIFT
-    extern xyz_pos_t workspace_offset;
+    extern xyze_pos_t workspace_offset;
     #define _WS workspace_offset
   #elif HAS_HOME_OFFSET
     #define _WS home_offset

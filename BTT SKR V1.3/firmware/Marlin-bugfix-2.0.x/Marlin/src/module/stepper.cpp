@@ -218,7 +218,7 @@ int32_t Stepper::ticks_nominal = -1;
   uint32_t Stepper::acc_step_rate; // needed for deceleration start point
 #endif
 
-xyz_long_t Stepper::endstops_trigsteps;
+xyze_long_t Stepper::endstops_trigsteps;
 xyze_long_t Stepper::count_position{0};
 xyze_int8_t Stepper::count_direction{0};
 

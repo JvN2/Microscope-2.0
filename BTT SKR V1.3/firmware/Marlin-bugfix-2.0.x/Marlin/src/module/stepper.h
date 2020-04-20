@@ -320,7 +320,7 @@ class Stepper {
     //
     // Exact steps at which an endstop was triggered
     //
-    static xyz_long_t endstops_trigsteps;
+    static xyze_long_t endstops_trigsteps;
 
     //
     // Positions of stepper motors, in step units

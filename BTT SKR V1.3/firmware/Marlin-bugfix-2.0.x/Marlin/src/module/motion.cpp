@@ -70,7 +70,12 @@
 #define DEBUG_OUT ENABLED(DEBUG_LEVELING_FEATURE)
 #include "../core/debug_out.h"
 
-#define XYZ_CONSTS(T, NAME, OPT) const PROGMEM XYZval<T> NAME##_P = { X_##OPT, Y_##OPT, Z_##OPT }
+
+#if ENABLED(E_AXIS_HOMING)
+  #define XYZ_CONSTS(T, NAME, OPT) const PROGMEM XYZEval<T> NAME##_P = { X_##OPT, Y_##OPT, Z_##OPT, E_##OPT }
+#else
+  #define XYZ_CONSTS(T, NAME, OPT) const PROGMEM XYZval<T> NAME##_P = { X_##OPT, Y_##OPT, Z_##OPT }
+#endif
 
 XYZ_CONSTS(float, base_min_pos,   MIN_POS);
 XYZ_CONSTS(float, base_max_pos,   MAX_POS);
@@ -99,7 +104,11 @@ bool relative_mode; // = false;
  *   Used by 'line_to_current_position' to do a move after changing it.
  *   Used by 'sync_plan_position' to update 'planner.position'.
  */
-xyze_pos_t current_position = { X_HOME_POS, Y_HOME_POS, Z_HOME_POS };
+xyze_pos_t current_position = { X_HOME_POS, Y_HOME_POS, Z_HOME_POS
+#if ENABLED(E_AXIS_HOMING)
+  , E_HOME_POS
+#endif
+};
 
 /**
  * Cartesian Destination
@@ -181,16 +190,16 @@ xyz_pos_t cartes;
  */
 #if HAS_POSITION_SHIFT
   // The distance that XYZ has been offset by G92. Reset by G28.
-  xyz_pos_t position_shift{0};
+  xyze_pos_t position_shift{0};
 #endif
 #if HAS_HOME_OFFSET
   // This offset is added to the configured home position.
   // Set by M206, M428, or menu item. Saved to EEPROM.
-  xyz_pos_t home_offset{0};
+  xyze_pos_t home_offset{0};
 #endif
 #if HAS_HOME_OFFSET && HAS_POSITION_SHIFT
   // The above two are combined to save on computes
-  xyz_pos_t workspace_offset{0};
+  xyze_pos_t workspace_offset{0};
 #endif
 
 #if HAS_ABL_NOT_UBL
@@ -590,7 +599,7 @@ void restore_feedrate_and_scaling() {
    * For DELTA/SCARA the XY constraint is based on the smallest
    * radius within the set software endstops.
    */
-  void apply_motion_limits(xyz_pos_t &target) {
+  void apply_motion_limits(xyze_pos_t &target) {
 
     if (!soft_endstops_enabled || !all_axes_homed()) return;
 
@@ -631,6 +640,17 @@ void restore_feedrate_and_scaling() {
     #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MAX_SOFTWARE_ENDSTOP_Z)
       NOMORE(target.z, soft_endstop.max.z);
     #endif
+
+    #if ENABLED(E_AXIS_HOMING)
+      #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MIN_SOFTWARE_ENDSTOP_E)
+        NOLESS(target.e, soft_endstop.min.e);
+      #endif
+      #if !HAS_SOFTWARE_ENDSTOPS || ENABLED(MAX_SOFTWARE_ENDSTOP_E)
+        NOMORE(target.e, soft_endstop.max.e);
+      #endif
+    #endif
+
+
   }
 
 #endif // HAS_SOFTWARE_ENDSTOPS
@@ -1468,9 +1488,18 @@ void homeaxis(const AxisEnum axis) {
     #else
       #define CAN_HOME_Z _CAN_HOME(Z)
     #endif
-    if (!CAN_HOME_X && !CAN_HOME_Y && !CAN_HOME_Z) return;
-  #endif
 
+    #if ENABLED(E_AXIS_HOMING)
+      #define CAN_HOME_E _CAN_HOME(E)
+    #endif
+
+    if (!CAN_HOME_X && !CAN_HOME_Y && !CAN_HOME_Z
+    #if ENABLED(E_AXIS_HOMING)
+      && !CAN_HOME_E
+    #endif       
+    ) return;
+  #endif
+  
   if (DEBUGGING(LEVELING)) DEBUG_ECHOLNPAIR(">>> homeaxis(", axis_codes[axis], ")");
 
   const int axis_home_dir = (
@@ -1478,7 +1507,7 @@ void homeaxis(const AxisEnum axis) {
       axis == X_AXIS ? x_home_dir(active_extruder) :
     #endif
     home_dir(axis)
-  );
+    );
 
   // Homing Z towards the bed? Deploy the Z probe or endstop.
   #if HOMING_Z_WITH_PROBE
@@ -1509,7 +1538,8 @@ void homeaxis(const AxisEnum axis) {
     if (axis == Z_AXIS && bltouch.deploy()) return; // The initial DEPLOY
   #endif
 
-  do_homing_move(axis, 1.5f * max_length(
+  do_homing_move(axis, 1.5f * 
+    max_length(
     #if ENABLED(DELTA)
       Z_AXIS
     #else
