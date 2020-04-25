@@ -23,6 +23,10 @@
 #include "../gcode.h"
 #include "../../module/tool_change.h"
 
+#if ENABLED(MICROSCOPE_MODE)
+  #include "../../feature/microscope.h"
+#endif
+
 #if ENABLED(DEBUG_LEVELING_FEATURE) || EXTRUDERS > 1
   #include "../../module/motion.h"
 #endif
@@ -53,11 +57,16 @@ void GcodeSuite::T(const uint8_t tool_index) {
     DEBUG_POS("BEFORE", current_position);
   }
 
+  #if ENABLED(MICROSCOPE_MODE)
+    log_extruder_position(active_extruder, tool_index);
+  #endif
+  
   #if ENABLED(PRUSA_MMU2)
-    if (parser.string_arg) {
-      mmu2.tool_change(parser.string_arg);   // Special commands T?/Tx/Tc
-      return;
-    }
+  if (parser.string_arg)
+  {
+    mmu2.tool_change(parser.string_arg); // Special commands T?/Tx/Tc
+    return;
+  }
   #endif
 
   #if EXTRUDERS < 2
@@ -66,10 +75,9 @@ void GcodeSuite::T(const uint8_t tool_index) {
 
   #else
 
-    tool_change(
+  tool_change(
       tool_index,
-      (tool_index == active_extruder) || parser.boolval('S')
-    );
+      (tool_index == active_extruder) || parser.boolval('S'));
 
   #endif
 

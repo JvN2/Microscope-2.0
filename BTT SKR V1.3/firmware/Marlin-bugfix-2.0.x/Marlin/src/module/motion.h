@@ -40,24 +40,27 @@
 
 // Axis homed and known-position states
 extern uint8_t axis_homed, axis_known_position;
-constexpr uint8_t xyz_bits = (_BV(X_AXIS) | _BV(Y_AXIS) | _BV(Z_AXIS)
-  #if ENABLED(E_AXIS_HOMING)
-    | _BV(E_AXIS)
-  #endif
-);
 
-FORCE_INLINE bool all_axes_homed() { return (axis_homed & xyz_bits) == xyz_bits; }
-FORCE_INLINE bool all_axes_known() { return (axis_known_position & xyz_bits) == xyz_bits; }
+#if ENABLED(E_AXIS_HOMING)
+  constexpr uint8_t xyze_bits = (_BV(X_AXIS) | _BV(Y_AXIS) | _BV(Z_AXIS) | _BV(E_AXIS));
+  FORCE_INLINE bool all_axes_homed() { return (axis_homed & xyze_bits) == xyze_bits; }
+  FORCE_INLINE bool all_axes_known() { return (axis_known_position & xyze_bits) == xyze_bits; }
+#else
+  constexpr uint8_t xyz_bits = (_BV(X_AXIS) | _BV(Y_AXIS) | _BV(Z_AXIS));
+  FORCE_INLINE bool all_axes_homed() { return (axis_homed & xyz_bits) == xyz_bits; }
+  FORCE_INLINE bool all_axes_known() { return (axis_known_position & xyz_bits) == xyz_bits; }
+#endif
+
 FORCE_INLINE void set_all_unhomed() { axis_homed = 0; }
 FORCE_INLINE void set_all_unknown() { axis_known_position = 0; }
 
 FORCE_INLINE bool homing_needed() {
   return !(
-    #if ENABLED(HOME_AFTER_DEACTIVATE)
+#if ENABLED(HOME_AFTER_DEACTIVATE)
       all_axes_known()
-    #else
+#else
       all_axes_homed()
-    #endif
+#endif
   );
 }
 

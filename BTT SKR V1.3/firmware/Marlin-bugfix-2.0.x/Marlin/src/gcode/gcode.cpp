@@ -32,6 +32,10 @@ GcodeSuite gcode;
 #include "queue.h"
 #include "../module/motion.h"
 
+#if ENABLED(MICROSCOPE_MODE)
+  #include "../feature/microscope.h"
+#endif
+
 #if ENABLED(PRINTCOUNTER)
   #include "../module/printcounter.h"
 #endif
@@ -126,7 +130,7 @@ void GcodeSuite::get_destination_from_command() {
   #endif
 
   // Get new XYZ position, whether absolute or relative
-  LOOP_XYZ(i) {
+  LOOP_XYZE(i) {
     if ( (seen[i] = parser.seenval(axis_codes[i])) ) {
       const float v = parser.value_axis_units((AxisEnum)i);
       if (skip_move)
@@ -138,13 +142,13 @@ void GcodeSuite::get_destination_from_command() {
       destination[i] = current_position[i];
   }
 
-  // Get new E position, whether absolute or relative
-  if ( (seen.e = parser.seenval('E')) ) {
-    const float v = parser.value_axis_units(E_AXIS);
-    destination.e = axis_is_relative(E_AXIS) ? current_position.e + v : v;
-  }
-  else
-    destination.e = current_position.e;
+  // // Get new E position, whether absolute or relative
+  // if ( (seen.e = parser.seenval('E')) ) {
+  //   const float v = parser.value_axis_units(E_AXIS);
+  //   destination.e = axis_is_relative(E_AXIS) ? current_position.e + v : v;
+  // }
+  // else
+  //   destination.e = current_position.e;
 
   #if ENABLED(POWER_LOSS_RECOVERY) && !PIN_EXISTS(POWER_LOSS)
     // Only update power loss recovery on moves with E
@@ -328,17 +332,32 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       case 92: G92(); break;                                      // G92: Set current axis position(s)
 
-      #if HAS_MESH
-        case 42: G42(); break;                                    // G42: Coordinated move to a mesh point
+      #if ENABLED(MICROSCOPE_MODE)
+            case 93:
+              set_start_time();
+              break;
+            case 94:
+              report_actual_axis_position();
+              break;
       #endif
 
-      #if ENABLED(CALIBRATION_GCODE)
-        case 425: G425(); break;                                  // G425: Perform calibration with calibration cube
-      #endif
+    #if HAS_MESH
+      case 42:
+        G42();
+        break; // G42: Coordinated move to a mesh point
+#endif
 
-      #if ENABLED(DEBUG_GCODE_PARSER)
-        case 800: parser.debug(); break;                          // G800: GCode Parser Test for G
-      #endif
+#if ENABLED(CALIBRATION_GCODE)
+      case 425:
+        G425();
+        break; // G425: Perform calibration with calibration cube
+#endif
+
+#if ENABLED(DEBUG_GCODE_PARSER)
+      case 800:
+        parser.debug();
+        break; // G800: GCode Parser Test for G
+#endif
 
       default: parser.unknown_command_error(); break;
     }

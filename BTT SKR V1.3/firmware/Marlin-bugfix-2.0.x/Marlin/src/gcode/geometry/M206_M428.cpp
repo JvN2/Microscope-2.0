@@ -29,6 +29,10 @@
 #include "../../lcd/ultralcd.h"
 #include "../../libs/buzzer.h"
 
+#if ENABLED(MICROSCOPE_MODE)
+  #include "../../feature/microscope.h"
+#endif
+
 /**
  * M206: Set Additional Homing Offset (X Y Z). SCARA aliases T=X, P=Y
  *
@@ -41,7 +45,12 @@ void GcodeSuite::M206() {
     if (parser.seen(axis_codes[i]))
       set_home_offset((AxisEnum)i, parser.value_linear_units());
 
-  #if ENABLED(MORGAN_SCARA)
+  #if ENABLED(MICROSCOPE_MODE)
+      if (parser.seen("E"))
+        set_extruder_offset(active_extruder, parser.value_linear_units());
+  #endif
+
+#if ENABLED(MORGAN_SCARA)
     if (parser.seen('T')) set_home_offset(A_AXIS, parser.value_float()); // Theta
     if (parser.seen('P')) set_home_offset(B_AXIS, parser.value_float()); // Psi
   #endif

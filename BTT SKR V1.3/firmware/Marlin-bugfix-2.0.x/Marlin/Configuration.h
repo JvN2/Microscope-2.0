@@ -1048,7 +1048,7 @@
 
 // @section homing
 
-//#define NO_MOTION_BEFORE_HOMING  // Inhibit movement until all axes have been homed
+#define NO_MOTION_BEFORE_HOMING  // Inhibit movement until all axes have been homed
 
 //#define UNKNOWN_Z_NO_RAISE // Don't raise Z (lower the bed) if Z is "unknown." For beds that fall when Z is powered off.
 
@@ -1067,8 +1067,8 @@
 // @section machine
 
 // The size of the print bed
-#define X_BED_SIZE 15
-#define Y_BED_SIZE 15
+#define X_BED_SIZE 20
+#define Y_BED_SIZE 20
 
 // Travel limits (mm) after homing, corresponding to endstop positions.
 #define X_MIN_POS 0
