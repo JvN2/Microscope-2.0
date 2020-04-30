@@ -34,6 +34,7 @@ GcodeSuite gcode;
 
 #if ENABLED(MICROSCOPE_MODE)
   #include "../feature/microscope.h"
+  #include "../sd/cardreader.h"
 #endif
 
 #if ENABLED(PRINTCOUNTER)
@@ -334,9 +335,12 @@ void GcodeSuite::process_parsed_command(const bool no_ok/*=false*/) {
 
       #if ENABLED(MICROSCOPE_MODE)
             case 93:
-              set_start_time();
+              start_logging();
               break;
             case 94:
+              stop_logging();
+              break;
+            case 95:
               report_actual_axis_position();
               break;
       #endif

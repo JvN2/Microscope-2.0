@@ -28,8 +28,9 @@
 
 // #include "../core/enum.h"
 
-void set_start_time();
+void start_logging();
+void stop_logging();
 void set_extruder_offset(const uint8_t extruder, const float offset);
 void log_extruder_position(const uint8_t old_extruder, const uint8_t new_extruder);
 void report_actual_axis_position();
-
+void print_log();

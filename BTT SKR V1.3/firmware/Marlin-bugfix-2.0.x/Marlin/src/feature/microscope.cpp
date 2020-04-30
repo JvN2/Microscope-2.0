@@ -36,14 +36,12 @@
 #if ENABLED(MICROSCOPE_MODE)
 
 #include "../core/serial.h"
-// #include "../core/enum.h"
 #include "../module/motion.h"
 #include "../module/planner.h"
 #include "../gcode/parser.h"
-// #include "../pins/pins_RAMPS.h"
 
-float extruder_position[EXTRUDERS] = { 0 };
-float extruder_offset[EXTRUDERS] = { 0 };
+float extruder_position[EXTRUDERS] = {0};
+float extruder_offset[EXTRUDERS] = {0};
 uint8_t i = 0;
 static char outstr[15];
 unsigned long startMillis = 0;
@@ -51,62 +49,75 @@ unsigned long startMillis = 0;
 uint8_t trigger_pin = 58;
 uint8_t led_pin = 57;
 
+unsigned long currentMillis = 0;
+unsigned long logMillis = 0;
+bool logging = false;
 
-void set_start_time(){
+void start_logging()
+{
   startMillis = millis();
   pinMode(trigger_pin, 1);
   digitalWrite(trigger_pin, 255);
   delay(100);
   digitalWrite(trigger_pin, 0);
+  logging = true;
+  logMillis = startMillis;
 }
 
-void set_extruder_offset(const uint8_t extruder, const float offset) {
+void stop_logging()
+{
+  logging = false;
+}
+
+void set_extruder_offset(const uint8_t extruder, const float offset)
+{
   extruder_offset[extruder] = offset;
 }
 
-void log_extruder_position(const uint8_t old_extruder, const uint8_t new_extruder) {
+void log_extruder_position(const uint8_t old_extruder, const uint8_t new_extruder)
+{
   extruder_position[old_extruder] = planner.get_axis_position_mm(E_AXIS);
   extruder_offset[old_extruder] = workspace_offset[E_AXIS];
   current_position[E_AXIS] = extruder_position[new_extruder];
   set_home_offset(E_AXIS, extruder_offset[new_extruder]);
 }
 
-void report_actual_axis_position(){
+void report_actual_axis_position()
+{
   dtostrf(0.001 * (millis() - startMillis), 0, 3, outstr);
   SERIAL_ECHOPAIR("t:", outstr);
-  if (parser.seen("X")){
-    dtostrf(LOGICAL_X_POSITION(planner.get_axis_position_mm(X_AXIS)), 0, 3, outstr);
-    SERIAL_ECHO(" X:");
-    SERIAL_ECHO(outstr);
+
+  dtostrf(LOGICAL_X_POSITION(planner.get_axis_position_mm(X_AXIS)), 0, 3, outstr);
+  SERIAL_ECHOPAIR(" X:", outstr);
+
+  dtostrf(LOGICAL_Y_POSITION(planner.get_axis_position_mm(Y_AXIS)), 0, 3, outstr);
+  SERIAL_ECHOPAIR(" Y:", outstr);
+
+  dtostrf(LOGICAL_Z_POSITION(planner.get_axis_position_mm(Z_AXIS)), 0, 3, outstr);
+  SERIAL_ECHOPAIR(" Z:", outstr);
+
+  extruder_position[active_extruder] = planner.get_axis_position_mm(E_AXIS);
+  LOOP_L_N(i, EXTRUDERS)
+  {
+    set_home_offset(E_AXIS, extruder_offset[i]);
+    SERIAL_ECHOPAIR(" E", i);
+    dtostrf(LOGICAL_E_POSITION(extruder_position[i]), 0, 3, outstr);
+    SERIAL_ECHOPAIR(":", outstr);
   }
-  if (parser.seen("Y")){
-    dtostrf(LOGICAL_Y_POSITION(planner.get_axis_position_mm(Y_AXIS)), 0, 3, outstr);
-    SERIAL_ECHO(" Y:");
-    SERIAL_ECHO(outstr);
-  }
-  if (parser.seen("Z")){
-    dtostrf(LOGICAL_Z_POSITION(planner.get_axis_position_mm(Z_AXIS)), 0, 3, outstr);
-    SERIAL_ECHO(" Z:");
-    SERIAL_ECHO(outstr);
-  }
-  if (parser.seen("E")){
-    extruder_position[active_extruder] = planner.get_axis_position_mm(E_AXIS);
-    LOOP_L_N(i, EXTRUDERS) {
-      set_home_offset(E_AXIS, extruder_offset[i]);
-      SERIAL_ECHOPAIR(" E", i);
-      dtostrf(LOGICAL_E_POSITION(extruder_position[i]), 0, 3, outstr);
-      SERIAL_ECHOPAIR(":",outstr);
-    }
-    set_home_offset(E_AXIS, extruder_offset[active_extruder]);
-  }
-  if (parser.seen("T")){
-    LOOP_L_N(i, 2) {
-      SERIAL_ECHOPAIR(" T", i);
-      dtostrf(-1, 0, 3, outstr);
-      SERIAL_ECHOPAIR(":",outstr);
-    }
-  }
+  set_home_offset(E_AXIS, extruder_offset[active_extruder]);
   SERIAL_EOL();
+}
+
+void print_log()
+{
+  currentMillis = millis();
+  // if ((currentMillis > logMillis) && (logging == true))
+  if (logging == true)
+  {
+    SERIAL_ECHO_START();
+    report_actual_axis_position();
+    logMillis += 250;
+  }
 }
 
 #endif
